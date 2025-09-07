@@ -4,7 +4,7 @@ import re
 from typing import Dict, List, Optional
 from urllib.parse import quote_plus
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -15,7 +15,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException,
-    StaleElementReferenceException,
     WebDriverException,
 )
 
@@ -25,7 +24,8 @@ class GoogleMapsScraper:
         self.results: List[Dict[str, str]] = []
         self._seen_identifiers: set = set()
         self.max_results_per_search = max_results_per_search
-        self._postal_re = re.compile(r"\b(\d{5})\b$")
+        # Accept 5-digit or 5+4 ZIP codes anywhere near the end
+        self._postal_re = re.compile(r"\b(\d{5})(?:-\d{4})?\b")
         self.driver = None
         self.headless = headless
         self._setup_driver()
@@ -115,6 +115,8 @@ class GoogleMapsScraper:
 
         # Execute search
         try:
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             search_input = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input#searchboxinput'))
             )
@@ -128,6 +130,8 @@ class GoogleMapsScraper:
 
         # Wait for results
         try:
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             WebDriverWait(self.driver, 20).until(
                 lambda d: len(self._get_result_tiles()) > 0
             )
@@ -167,16 +171,32 @@ class GoogleMapsScraper:
         """Process a single result tile"""
         try:
             # Scroll into view
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", tile)
             time.sleep(0.5)
             
-            # Click the tile
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(tile))
-            tile.click()
+            # Determine a reliable clickable element inside the tile
+            click_target = tile
+            try:
+                # Prefer the place anchor inside the tile when available
+                inner_link = tile.find_element(By.CSS_SELECTOR, 'a[href*="/maps/place/"]')
+                if inner_link:
+                    click_target = inner_link
+            except Exception:
+                pass
+
+            # Wait until the target is visible, then click safely
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
+            WebDriverWait(self.driver, 10).until(EC.visibility_of(click_target))
+            self._safe_click(click_target)
             
-            # Wait for detail panel to load
+            # Wait for detail panel to load and become visible
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             WebDriverWait(self.driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'h1'))
+                EC.visibility_of_element_located((By.CSS_SELECTOR, 'h1'))
             )
             time.sleep(2)  # Extra time for content to load
 
@@ -199,6 +219,18 @@ class GoogleMapsScraper:
         except Exception as e:
             print(f"Failed to process result: {e}")
             return False
+
+    def _safe_click(self, element) -> None:
+        """Attempt to click an element, with JS fallback if intercepted."""
+        try:
+            element.click()
+        except Exception:
+            try:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
+                self.driver.execute_script("arguments[0].click();", element)
+            except Exception:
+                raise
     
     def _get_result_tiles(self):
         """Return list of result tile elements using robust selectors.
@@ -229,8 +261,12 @@ class GoogleMapsScraper:
     def scroll_results(self, max_to_load: int = 15) -> None:
         """Scroll through results to load more businesses."""
         try:
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             results_panel = self.driver.find_element(By.CSS_SELECTOR, 'div[role="feed"]')
         except NoSuchElementException:
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             results_panel = self.driver.find_element(By.TAG_NAME, 'body')
 
         prev_count = 0
@@ -249,10 +285,14 @@ class GoogleMapsScraper:
                 stagnant_rounds = 0
 
             try:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 self.driver.execute_script(
                     "arguments[0].scrollTop = arguments[0].scrollHeight", results_panel
                 )
             except Exception:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             prev_count = count
@@ -270,6 +310,8 @@ class GoogleMapsScraper:
         ]
         for selector in aria_css:
             try:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 for btn in self.driver.find_elements(By.CSS_SELECTOR, selector):
                     if btn.is_displayed():
                         btn.click()
@@ -288,6 +330,8 @@ class GoogleMapsScraper:
         ]
         for xp in xpaths:
             try:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 elems = self.driver.find_elements(By.XPATH, xp)
                 for el in elems:
                     if el.is_displayed():
@@ -312,6 +356,8 @@ class GoogleMapsScraper:
             
             for selector in name_selectors:
                 try:
+                    if not self.driver:
+                        raise WebDriverException("Driver not initialized")
                     name_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     name_text = name_element.text.strip()
                     if name_text and not name_found:
@@ -323,6 +369,8 @@ class GoogleMapsScraper:
             
             if not name_found:
                 # Fallback to page title
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 title = self.driver.title
                 if title and ' - Google Maps' in title:
                     business_data['name'] = title.split(' - Google Maps', 1)[0].strip()
@@ -340,6 +388,8 @@ class GoogleMapsScraper:
             address_found = False
             for selector in address_selectors:
                 try:
+                    if not self.driver:
+                        raise WebDriverException("Driver not initialized")
                     address_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     full_address = address_element.text.strip()
                     if full_address and not address_found:
@@ -365,6 +415,8 @@ class GoogleMapsScraper:
             phone_found = False
             for selector in phone_selectors:
                 try:
+                    if not self.driver:
+                        raise WebDriverException("Driver not initialized")
                     phone_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     phone_text = phone_element.text.strip()
                     if phone_text and not phone_found:
@@ -388,6 +440,8 @@ class GoogleMapsScraper:
             website_found = False
             for selector in website_selectors:
                 try:
+                    if not self.driver:
+                        raise WebDriverException("Driver not initialized")
                     website_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                     href = website_element.get_attribute('href')
                     if href and 'google.com' not in href and not website_found:
@@ -412,6 +466,8 @@ class GoogleMapsScraper:
                 rating = 'N/A'
                 for selector in rating_selectors:
                     try:
+                        if not self.driver:
+                            raise WebDriverException("Driver not initialized")
                         rating_element = self.driver.find_element(By.CSS_SELECTOR, selector)
                         rating_text = rating_element.text.strip()
                         # Extract number from rating text
@@ -438,6 +494,8 @@ class GoogleMapsScraper:
                 ]
                 for selector in review_css:
                     try:
+                        if not self.driver:
+                            raise WebDriverException("Driver not initialized")
                         el = self.driver.find_element(By.CSS_SELECTOR, selector)
                         txt = el.text.strip()
                         m = re.search(r'(\d{1,3}(?:,\d{3})*|\d+)', txt)
@@ -448,6 +506,8 @@ class GoogleMapsScraper:
                         continue
                 if review_count == 'N/A':
                     try:
+                        if not self.driver:
+                            raise WebDriverException("Driver not initialized")
                         el = self.driver.find_element(By.XPATH, "//span[contains(translate(., 'REVIEWS', 'reviews'), 'reviews')]")
                         txt = el.text.strip()
                         m = re.search(r'(\d{1,3}(?:,\d{3})*|\d+)', txt)
@@ -472,12 +532,16 @@ class GoogleMapsScraper:
 
             # Photos count
             try:
+                if not self.driver:
+                    raise WebDriverException("Driver not initialized")
                 photo_elements = self.driver.find_elements(By.CSS_SELECTOR, '[data-photo-index]')
                 business_data['photo_count'] = str(len(photo_elements))
             except Exception:
                 business_data['photo_count'] = '0'
 
             # Location link
+            if not self.driver:
+                raise WebDriverException("Driver not initialized")
             business_data['location_link'] = self.driver.current_url
 
             return business_data
@@ -492,8 +556,9 @@ class GoogleMapsScraper:
 
         postal_match = self._postal_re.search(address)
         if postal_match:
-            parts['postal_code'] = postal_match.group(1)
-            street_part = re.sub(r',\s*[A-Z]{2}\s*\d{5}$', '', address)
+            parts['postal_code'] = postal_match.group(0)
+            # Remove trailing state + ZIP (supports ZIP+4) if present
+            street_part = re.sub(r',\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?\s*$', '', address)
             parts['street'] = street_part.strip()
         else:
             parts['postal_code'] = 'N/A'
