@@ -201,8 +201,15 @@ class GoogleMapsScraper:
             return False
     
     def _get_result_tiles(self):
-        """Return list of result tile elements using improved selectors."""
-        selectors = [
+        """Return list of result tile elements using robust selectors.
+
+        Google Maps updates classnames frequently. Prefer role/aria markers
+        and attributes that tend to be stable.
+        """
+        css_candidates = [
+            # Primary: the results feed with items that have an aria-label and index
+            'div[role="feed"] div[aria-label][data-result-index]',
+            # Many map result tiles are anchors with aria-label inside the feed
             'div[role="feed"] a[aria-label]',
             'div[role="feed"] div[jsaction*="click"]',
             '.hfpxzc',  # Common Google Maps result class
@@ -418,6 +425,15 @@ class GoogleMapsScraper:
                             break
                     except NoSuchElementException:
                         continue
+                if review_count == 'N/A':
+                    try:
+                        el = self.driver.find_element(By.XPATH, "//span[contains(translate(., 'REVIEWS', 'reviews'), 'reviews')]")
+                        txt = el.text.strip()
+                        m = re.search(r'(\d{1,3}(?:,\d{3})*|\d+)', txt)
+                        if m:
+                            review_count = m.group(1)
+                    except Exception:
+                        pass
 
                 business_data['rating'] = rating
                 business_data['review_count'] = review_count
