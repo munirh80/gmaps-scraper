@@ -7,3 +7,10 @@
 2025-09-07 02:52:15,873 - INFO - Driver [/Users/me/.wdm/drivers/chromedriver/mac64/140.0.7339.80/chromedriver-mac-x64/chromedriver] found in cache
 2025-09-07 02:52:18,805 - INFO - Scraper initialized (headless=True, max_results=5)
 2025-09-07 02:52:18,806 - INFO - Starting search: 'shooting ranges' in 'Washington DC'
+2025-09-07 03:06:56,919 - INFO - Search completed. Collected 1 entries
+2025-09-07 03:06:57,848 - INFO - Results saved to 'dmv_shooting_ranges_improved_sample.csv' (900 bytes)
+2025-09-07 03:06:57,848 - INFO - Closing scraper...
+2025-09-07 03:06:59,671 - INFO - Scraper closed successfully
+2025-09-07 03:06:59,675 - INFO - Total execution time: 884.80 seconds
+2025-09-07 03:06:59,676 - INFO - Scraping completed successfully
+2025-09-07 03:06:59,681 - INFO - Test completed successfully
