@@ -1,0 +1,43 @@
+# Enhanced Google Maps Scraper Configuration
+# This file demonstrates all available configuration options
+
+# Core scraping parameters
+headless: true
+max_results_per_search: 15
+
+# Search targets - can specify single values or lists
+query: "shooting ranges"  # Single query (legacy support)
+location: "Washington DC"  # Single location (legacy support)
+
+# Multiple queries and locations (preferred approach)
+queries:
+  - "shooting ranges"
+  - "gun clubs" 
+  - "indoor shooting ranges"
+  - "firearms training"
+
+locations:
+  - "Washington DC"
+  - "Northern Virginia"
+  - "Maryland"
+  - "Baltimore, MD"
+
+# Output settings
+output_filename: "dmv_firearms_facilities"
+output_format: "csv"  # Options: csv, json, excel
+include_timestamp: true
+
+# Performance and concurrency
+max_concurrent_searches: 2
+delay_between_searches: 3.0
+timeout_per_search: 300
+
+# Retry settings
+max_retries: 3
+retry_delay: 5.0
+
+# Advanced customization (optional)
+custom_selectors:
+  name: "h1 span"
+  address: "[data-item-id='address'] .fontBodyMedium"
+  phone: "[data-item-id*='phone'] .fontBodyMedium"

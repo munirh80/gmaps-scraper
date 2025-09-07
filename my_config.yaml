@@ -1,0 +1,21 @@
+custom_selectors: {}
+delay_between_searches: 3.0
+headless: true
+include_timestamp: true
+location: Washington DC
+locations:
+- Washington DC
+- Northern Virginia
+- Maryland
+max_concurrent_searches: 2
+max_results_per_search: 10
+max_retries: 3
+output_filename: gmaps_results_20250907_033427.csv
+output_format: csv
+queries:
+- shooting ranges
+- gun clubs
+- firearms training
+query: shooting ranges
+retry_delay: 5.0
+timeout_per_search: 300
