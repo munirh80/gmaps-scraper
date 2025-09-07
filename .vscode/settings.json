@@ -19,5 +19,6 @@
         "activityBar.background": "#5B0E25",
         "titleBar.activeBackground": "#7F1433",
         "titleBar.activeForeground": "#FEFBFC"
-    }
+    },
+    "chat.agent.maxRequests": 100
 }
