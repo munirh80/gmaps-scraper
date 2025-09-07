@@ -14,3 +14,12 @@
 2025-09-07 03:06:59,675 - INFO - Total execution time: 884.80 seconds
 2025-09-07 03:06:59,676 - INFO - Scraping completed successfully
 2025-09-07 03:06:59,681 - INFO - Test completed successfully
+2025-09-07 06:16:03,042 - INFO - Starting Google Maps Scraper Test
+2025-09-07 06:16:03,043 - INFO - Configuration: query='shooting ranges', location='Washington DC', max_results=5, headless=True
+2025-09-07 06:16:03,043 - INFO - Initializing Google Maps scraper...
+2025-09-07 06:16:03,043 - INFO - ====== WebDriver manager ======
+2025-09-07 06:16:03,352 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-07 06:16:03,513 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-07 06:16:03,664 - INFO - Driver [/Users/me/.wdm/drivers/chromedriver/mac64/140.0.7339.80/chromedriver-mac-x64/chromedriver] found in cache
+2025-09-07 06:16:05,451 - INFO - Scraper initialized (headless=True, max_results=5)
+2025-09-07 06:16:05,452 - INFO - Starting search: 'shooting ranges' in 'Washington DC'
