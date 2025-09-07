@@ -579,23 +579,23 @@ class GoogleMapsScraper:
 
 # Main execution
 if __name__ == "__main__":
-    scraper = GoogleMapsScraper()
-    
+    # Narrow default run for quick validation: single query/area, headless, small cap.
+    scraper = GoogleMapsScraper(headless=True, max_results_per_search=5)
+
     try:
-        print("Starting DMV Shooting Ranges Scraper...")
-        print("This may take several minutes...")
-        
-        scraper.scrape_dmv_shooting_ranges()
-        
+        print("Starting DMV Shooting Ranges Scraper (quick test)...")
+        # Run a single small search instead of the full DMV sweep
+        scraper.search_locations("shooting ranges", "Washington DC")
+
     except KeyboardInterrupt:
         print("\nScraping interrupted by user")
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
-        # Always attempt to save whatever has been collected so far
+        # Save whatever has been collected so far to a sample CSV
         try:
-            scraper.save_to_csv('dmv_shooting_ranges.csv')
+            scraper.save_to_csv('dmv_shooting_ranges_sample.csv')
         except Exception as save_err:
             print(f"Failed to save CSV: {save_err}")
         scraper.close()
-        print("Scraper finished")
+        print("Scraper finished (quick test)")
