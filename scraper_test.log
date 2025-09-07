@@ -1,0 +1,9 @@
+2025-09-07 02:52:14,870 - INFO - Starting Google Maps Scraper Test
+2025-09-07 02:52:14,870 - INFO - Configuration: query='shooting ranges', location='Washington DC', max_results=5, headless=True
+2025-09-07 02:52:14,870 - INFO - Initializing Google Maps scraper...
+2025-09-07 02:52:14,871 - INFO - ====== WebDriver manager ======
+2025-09-07 02:52:15,333 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-07 02:52:15,532 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-07 02:52:15,873 - INFO - Driver [/Users/me/.wdm/drivers/chromedriver/mac64/140.0.7339.80/chromedriver-mac-x64/chromedriver] found in cache
+2025-09-07 02:52:18,805 - INFO - Scraper initialized (headless=True, max_results=5)
+2025-09-07 02:52:18,806 - INFO - Starting search: 'shooting ranges' in 'Washington DC'
