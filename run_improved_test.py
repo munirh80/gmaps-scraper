@@ -13,6 +13,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd  # type: ignore[import-untyped]
+
 from improved_scraper import GoogleMapsScraper
 
 
@@ -131,6 +133,26 @@ def run_scraper_test(config: ScraperConfig) -> int:
                 if output_path.exists():
                     file_size = output_path.stat().st_size
                     logger.info(f"Results saved to '{output_path}' ({file_size} bytes)")
+
+                    # Validate CSV contents
+                    try:
+                        df = pd.read_csv(output_path)
+                        expected_headers = [
+                            'name', 'website', 'phone', 'full_address', 'street',
+                            'postal_code', 'reviews', 'rating', 'review_count',
+                            'photo_count', 'location_link', 'search_query',
+                            'search_area'
+                        ]
+                        missing = [h for h in expected_headers if h not in df.columns]
+                        if missing or df.empty:
+                            logger.error(
+                                "CSV validation failed: missing headers %s or no data rows",
+                                missing
+                            )
+                            return 6
+                    except Exception as e:
+                        logger.error(f"Failed to validate CSV: {e}")
+                        return 6
                 else:
                     logger.warning(f"Output file '{output_path}' was not created")
                     return 3
