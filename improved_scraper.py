@@ -211,12 +211,13 @@ class GoogleMapsScraper:
             'div[role="feed"] div[aria-label][data-result-index]',
             # Many map result tiles are anchors with aria-label inside the feed
             'div[role="feed"] a[aria-label]',
-            'div[role="feed"] div[jsaction*="click"]',
-            '.hfpxzc',  # Common Google Maps result class
+            # Known tile class used often
+            'div[role="feed"] a.hfpxzc',
+            # Fallback: any place link
             'a[href*="/maps/place/"]',
         ]
-        
-        for sel in selectors:
+
+        for sel in css_candidates:
             try:
                 tiles = self.driver.find_elements(By.CSS_SELECTOR, sel)
                 if tiles:
@@ -258,25 +259,43 @@ class GoogleMapsScraper:
             time.sleep(1.5)
 
     def _dismiss_popups(self) -> None:
-        """Dismiss common popups with improved detection"""
-        selectors_to_try = [
+        """Dismiss common popups with improved detection.
+
+        Avoid unsupported CSS ':contains' by using XPath for text matching.
+        """
+        # First try ARIA-label driven buttons via CSS
+        aria_css = [
             'button[aria-label*="Accept"]',
             'button[aria-label*="I agree"]',
-            'button:contains("Accept")',
-            'button:contains("I agree")',
-            'button:contains("Got it")',
         ]
-        
-        for selector in selectors_to_try:
+        for selector in aria_css:
             try:
-                buttons = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                for button in buttons:
-                    if button.is_displayed():
-                        button.click()
+                for btn in self.driver.find_elements(By.CSS_SELECTOR, selector):
+                    if btn.is_displayed():
+                        btn.click()
                         time.sleep(1)
                         break
             except Exception:
-                continue
+                pass
+
+        # Then try text-based labels via XPath contains()
+        xpaths = [
+            "//button[normalize-space()='Accept']",
+            "//button[contains(., 'Accept')]",
+            "//button[contains(., 'I agree')]",
+            "//button[contains(., 'Got it')]",
+            "//div[@role='dialog']//button[contains(., 'OK')]",
+        ]
+        for xp in xpaths:
+            try:
+                elems = self.driver.find_elements(By.XPATH, xp)
+                for el in elems:
+                    if el.is_displayed():
+                        el.click()
+                        time.sleep(1)
+                        break
+            except Exception:
+                pass
     
     def extract_business_info(self) -> Optional[Dict[str, str]]:
         """Extract detailed information from a business page with improved selectors."""
@@ -286,9 +305,9 @@ class GoogleMapsScraper:
             # Name - try multiple approaches
             name_found = False
             name_selectors = [
-                'h1[data-attrid="title"]',
                 'h1 span',
                 'h1',
+                '[role="main"] h1',
             ]
             
             for selector in name_selectors:
@@ -315,6 +334,7 @@ class GoogleMapsScraper:
                 '[data-item-id="address"] .fontBodyMedium',
                 'button[data-item-id="address"] span[class*="fontBody"]',
                 '[data-value="Address"]',
+                'button[aria-label*="Address"]',
             ]
             
             address_found = False
@@ -339,6 +359,7 @@ class GoogleMapsScraper:
             phone_selectors = [
                 '[data-item-id*="phone"] .fontBodyMedium',
                 'button[data-item-id*="phone"] span[class*="fontBody"]',
+                'button[aria-label*="Phone"]',
             ]
             
             phone_found = False
@@ -360,6 +381,7 @@ class GoogleMapsScraper:
             website_selectors = [
                 '[data-item-id="authority"] a',
                 'a[data-value*="website"]',
+                'a[aria-label*="Website"]',
                 'a[href]:not([href*="google.com"]):not([href*="maps"])',
             ]
             
@@ -408,20 +430,19 @@ class GoogleMapsScraper:
 
                 # Try to find review count
                 review_count = 'N/A'
-                review_selectors = [
+                # Use CSS where possible and fallback to XPath for text lookup
+                review_count = 'N/A'
+                review_css = [
                     '.F7nice .fontBodySmall',
                     'button[aria-label*="reviews"]',
-                    'span:contains("review")'
                 ]
-                
-                for selector in review_selectors:
+                for selector in review_css:
                     try:
-                        review_element = self.driver.find_element(By.CSS_SELECTOR, selector)
-                        review_text = review_element.text.strip()
-                        # Extract number from review text
-                        review_match = re.search(r'(\d+(?:,\d+)*)', review_text)
-                        if review_match:
-                            review_count = review_match.group(1)
+                        el = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        txt = el.text.strip()
+                        m = re.search(r'(\d{1,3}(?:,\d{3})*|\d+)', txt)
+                        if m:
+                            review_count = m.group(1)
                             break
                     except NoSuchElementException:
                         continue
