@@ -14,5 +14,10 @@
     ],
     "editor.wordWrap": "on",
     "chatgpt.openOnStartup": true,
-    "workbench.externalBrowser": "chrome"
+    "workbench.externalBrowser": "chrome",
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#5B0E25",
+        "titleBar.activeBackground": "#7F1433",
+        "titleBar.activeForeground": "#FEFBFC"
+    }
 }
