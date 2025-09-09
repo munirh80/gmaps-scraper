@@ -452,7 +452,6 @@ class GoogleMapsScraper:
                 # Try to find review count
                 review_count = 'N/A'
                 # Use CSS where possible and fallback to XPath for text lookup
-                review_count = 'N/A'
                 review_css = [
                     '.F7nice .fontBodySmall',
                     'button[aria-label*="reviews"]',
