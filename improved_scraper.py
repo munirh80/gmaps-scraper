@@ -512,7 +512,7 @@ class GoogleMapsScraper:
 
         postal_match = self._postal_re.search(address)
         if postal_match:
-            parts['postal_code'] = postal_match.group(0)
+            parts['postal_code'] = postal_match.group(1)
             # Remove trailing state + ZIP (supports ZIP+4) if present
             street_part = re.sub(r',\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?\s*$', '', address)
             parts['street'] = street_part.strip()
